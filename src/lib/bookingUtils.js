@@ -1,4 +1,7 @@
 export const SALES_TAX_RATE = 0.0825;
+export const VOLUME_DISCOUNT_THRESHOLD = 200;
+export const VOLUME_DISCOUNT_AMOUNT = 30;
+export const WEEKDAY_DISCOUNT_RATE = 0.10;
 
 export const MULTI_TV_DISCOUNTS = {
   two: 0.10,
@@ -99,6 +102,52 @@ export const calculateSalesTax = (amount) => {
   return amount * SALES_TAX_RATE;
 };
 
+const normalizePromoCode = (value) => (value || '').toString().trim().toUpperCase();
+
+const PROMO_RULES = {
+  APTSAVE10PER: {
+    kind: 'percent',
+    value: 0.10,
+    label: 'Coupon 10%',
+    allowsVolumeDiscount: true,
+    allowsWeekdayDiscount: false
+  },
+  APTSAVE30: {
+    kind: 'fixed',
+    value: 30,
+    label: 'Coupon $30',
+    allowsVolumeDiscount: false,
+    allowsWeekdayDiscount: true
+  },
+  APTSAVE35: {
+    kind: 'fixed',
+    value: 35,
+    label: 'Coupon $35',
+    allowsVolumeDiscount: false,
+    allowsWeekdayDiscount: true
+  },
+  APTSAVE40: {
+    kind: 'fixed',
+    value: 40,
+    label: 'Coupon $40',
+    allowsVolumeDiscount: false,
+    allowsWeekdayDiscount: true
+  }
+};
+
+const resolvePromoRule = (rawPromoCode) => {
+  const normalized = normalizePromoCode(rawPromoCode);
+  if (!normalized) return null;
+
+  // Accept a few known variants from marketing sheets/links.
+  if (normalized === 'APTSAVE=35' || normalized === 'APTSAVE-35') {
+    return { ...PROMO_RULES.APTSAVE35, code: normalized };
+  }
+
+  const directMatch = PROMO_RULES[normalized];
+  return directMatch ? { ...directMatch, code: normalized } : null;
+};
+
 export const calculatePrice = (data) => {
   const tvCount = 1;
   let unitPrice = 0;
@@ -121,27 +170,57 @@ export const calculatePrice = (data) => {
   const subtotal = (unitPrice * tvCount) + techPrice;
   const tripCharge = PRICING.TRIP_CHARGE;
   const baseAmount = subtotal + tripCharge;
-  
-  // 2. Pricing Discount
+
+  // `book` is often a campaign slug (e.g. GENERIC10-DFW); only use it for discounts when it maps to a known coupon.
+  const fromPromo = normalizePromoCode(data?.promoCode);
+  const fromBook = normalizePromoCode(data?.book);
+  const promoRule = resolvePromoRule(fromPromo) || resolvePromoRule(fromBook);
+  const resolvedPromoCode = resolvePromoRule(fromPromo)
+    ? fromPromo
+    : resolvePromoRule(fromBook)
+      ? fromBook
+      : '';
+  const hasPromoRule = Boolean(promoRule);
+
+  let couponDiscount = 0;
+  if (promoRule) {
+    if (promoRule.kind === 'percent') {
+      couponDiscount = baseAmount * promoRule.value;
+    } else if (promoRule.kind === 'fixed') {
+      couponDiscount = Math.min(baseAmount, promoRule.value);
+    }
+  }
+
+  const amountAfterCoupon = Math.max(0, baseAmount - couponDiscount);
+
+  // 2. Pricing Discount ($30 for orders > $200)
   let volumeDiscount = 0;
-  if (baseAmount > 200) {
-    volumeDiscount = 30;
+  const canApplyVolumeDiscount = hasPromoRule
+    ? promoRule.allowsVolumeDiscount
+    : true;
+  if (canApplyVolumeDiscount && baseAmount > VOLUME_DISCOUNT_THRESHOLD) {
+    volumeDiscount = VOLUME_DISCOUNT_AMOUNT;
   }
 
   // Result from step 1
-  const amountAfterVolume = Math.max(0, baseAmount - volumeDiscount);
+  const amountAfterVolume = Math.max(0, amountAfterCoupon - volumeDiscount);
 
   // 3. Monday & Tuesday Discount (10% on the result of step 1)
   let dayOfWeekDiscount = 0;
   let saturdaySurcharge = 0;
+  let dayOfWeek = null;
   if (data.date) {
     const [year, month, day] = data.date.split('-').map(Number);
     const dateObj = new Date(year, month - 1, day);
-    const dayOfWeek = dateObj.getDay(); 
+    dayOfWeek = dateObj.getDay();
     
     // Check if Monday (1) or Tuesday (2)
-    if (dayOfWeek === 1 || dayOfWeek === 2) {
-      dayOfWeekDiscount = amountAfterVolume * 0.10;
+    const isMondayOrTuesday = dayOfWeek === 1 || dayOfWeek === 2;
+    const canApplyWeekdayDiscount = hasPromoRule
+      ? promoRule.allowsWeekdayDiscount
+      : true;
+    if (isMondayOrTuesday && canApplyWeekdayDiscount) {
+      dayOfWeekDiscount = amountAfterVolume * WEEKDAY_DISCOUNT_RATE;
     }
 
     if (dayOfWeek === 6) {
@@ -163,12 +242,16 @@ export const calculatePrice = (data) => {
     subtotal,
     tripCharge,
     baseAmount,
+    promoCode: resolvedPromoCode,
+    promoLabel: promoRule?.label || null,
+    couponDiscount,
     volumeDiscount,
     dayOfWeekDiscount,
     taxableAmount,
     salesTax,
     estimatedTotal,
-    discount: volumeDiscount + dayOfWeekDiscount // for compatibility
+    discount: couponDiscount + volumeDiscount + dayOfWeekDiscount, // for compatibility
+    saturdaySurcharge
   };
 };
 

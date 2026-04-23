@@ -4,8 +4,8 @@ import { calculatePrice, formatCurrency, PRICING } from '@/lib/bookingUtils';
 import { Info, Clock, Award, CheckCircle2, ShieldCheck, ListChecks } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const PriceBreakdown = ({ formData }) => {
-  const pricing = calculatePrice(formData);
+const PriceBreakdown = ({ formData, promoCode = '', book = '' }) => {
+  const pricing = calculatePrice({ ...formData, promoCode, book });
 const isSaturday = formData.date
   ? new Date(formData.date).getDay() === 6
   : false;
@@ -126,8 +126,14 @@ const isSaturday = formData.date
           </div>
 
           {/* Discounts */}
-          {(pricing.volumeDiscount > 0 || pricing.dayOfWeekDiscount > 0) && (
+          {(pricing.couponDiscount > 0 || pricing.volumeDiscount > 0 || pricing.dayOfWeekDiscount > 0) && (
             <div className="space-y-2 sm:space-y-3 pb-3 sm:pb-4 border-b border-gray-200">
+              {pricing.couponDiscount > 0 && (
+                <div className="flex justify-between items-center text-green-600 font-medium text-xs sm:text-sm">
+                  <span>{pricing.promoLabel || 'Coupon Discount'}</span>
+                  <span>-{formatCurrency(pricing.couponDiscount)}</span>
+                </div>
+              )}
               {pricing.volumeDiscount > 0 && (
                 <div className="flex justify-between items-center text-green-600 font-medium text-xs sm:text-sm">
                   <span>Pricing Discount</span>
@@ -140,6 +146,18 @@ const isSaturday = formData.date
                   <span>-{formatCurrency(pricing.dayOfWeekDiscount)}</span>
                 </div>
               )}
+            </div>
+          )}
+
+          {!!book && (
+            <div className="bg-blue-50 text-blue-800 p-2.5 sm:p-3 rounded-lg text-[10px] sm:text-xs border border-blue-100 mt-2 leading-relaxed">
+              Promo source: {book}
+            </div>
+          )}
+
+          {pricing.couponDiscount > 0 && pricing.promoCode && (
+            <div className="bg-green-50 text-green-800 p-2.5 sm:p-3 rounded-lg text-[10px] sm:text-xs border border-green-100 mt-2 leading-relaxed">
+              Coupon applied: {pricing.promoCode}
             </div>
           )}
 

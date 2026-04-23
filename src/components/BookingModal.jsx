@@ -11,10 +11,12 @@ import Step3 from '@/components/booking/Step3';
 import PriceBreakdown from '@/components/booking/PriceBreakdown';
 import SuccessState from '@/components/booking/SuccessState';
 import { cn } from '@/lib/utils';
+import { fetchCouponCodeFromPromoSource } from '@/lib/couponService';
 
 const BookingModal = ({ isOpen, onClose }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const bookPromoCode = new URLSearchParams(window.location.search).get('book')?.trim() || '';
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     ...INITIAL_FORM_DATA,
@@ -27,6 +29,7 @@ const BookingModal = ({ isOpen, onClose }) => {
   const [showMobileSummary, setShowMobileSummary] = useState(false);
   const [stripeCheckoutUrl, setStripeCheckoutUrl] = useState(null);
   const [isSaturdayBooking, setIsSaturdayBooking] = useState(false);
+  const [resolvedPromoCode, setResolvedPromoCode] = useState('');
   
   const scrollContainerRef = useRef(null);
 
@@ -46,6 +49,35 @@ const BookingModal = ({ isOpen, onClose }) => {
       scrollContainerRef.current.scrollTop = 0;
     }
   }, [currentStep]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadPromoCode = async () => {
+      if (!isOpen || !bookPromoCode) {
+        setResolvedPromoCode('');
+        return;
+      }
+
+      try {
+        const promo = await fetchCouponCodeFromPromoSource(bookPromoCode);
+        if (isMounted) {
+          setResolvedPromoCode(promo);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setResolvedPromoCode('');
+        }
+        console.warn('[BookingModal] Promo lookup on load failed:', error);
+      }
+    };
+
+    loadPromoCode();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, bookPromoCode]);
 
   if (!isOpen) return null;
 
@@ -115,6 +147,7 @@ const BookingModal = ({ isOpen, onClose }) => {
           setShowMobileSummary(false);
           setStripeCheckoutUrl(null);
           setIsSaturdayBooking(false);
+          setResolvedPromoCode('');
         }, 300);
       }
     } else {
@@ -128,6 +161,7 @@ const BookingModal = ({ isOpen, onClose }) => {
           setShowMobileSummary(false);
           setStripeCheckoutUrl(null);
           setIsSaturdayBooking(false);
+          setResolvedPromoCode('');
         }, 300);
       }
     }
@@ -150,7 +184,9 @@ const BookingModal = ({ isOpen, onClose }) => {
           name: (formData.contact.fullName || '').trim(),
           phone: formatPhone(formData.contact.phone)
         },
-        confirmationNumber,stripeCheckoutUrl
+        ...(bookPromoCode ? { book: bookPromoCode } : {}),
+        ...(resolvedPromoCode ? { promoCode: resolvedPromoCode } : {}),
+        confirmationNumber
       };
 
       const isSaturday =
@@ -237,6 +273,7 @@ if (result?.checkoutUrl) {
     setShowMobileSummary(false);
     setStripeCheckoutUrl(null);
     setIsSaturdayBooking(false);
+    setResolvedPromoCode('');
   };
 
   const toggleMobileSummary = () => {
@@ -311,7 +348,7 @@ if (result?.checkoutUrl) {
                     </button>
                  </div>
                  <div className="flex-1 overflow-y-auto p-4 pb-24">
-                    <PriceBreakdown formData={formData} />
+                    <PriceBreakdown formData={formData} promoCode={resolvedPromoCode} book={bookPromoCode} />
                  </div>
                </motion.div>
              )}
@@ -350,7 +387,7 @@ if (result?.checkoutUrl) {
 
                 <div className="hidden md:block w-[320px] bg-gray-50 border-l border-gray-200 overflow-y-auto">
                   <div className="p-6 pb-32">
-                    <PriceBreakdown formData={formData} />
+                    <PriceBreakdown formData={formData} promoCode={resolvedPromoCode} book={bookPromoCode} />
                   </div>
                 </div>
              </>

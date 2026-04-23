@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Loader2, ChevronUp, ChevronDown, X } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
@@ -19,11 +19,13 @@ import PriceBreakdown from '@/components/booking/PriceBreakdown';
 import SuccessState from '@/components/booking/SuccessState';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { cn } from '@/lib/utils';
+import { fetchCouponCodeFromPromoSource } from '@/lib/couponService';
 
 const BookingPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const bookPromoCode = new URLSearchParams(location.search).get('book')?.trim() || '';
   
   const [formData, setFormData] = useState({
     ...INITIAL_FORM_DATA,
@@ -35,6 +37,7 @@ const BookingPage = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [stripeCheckoutUrl, setStripeCheckoutUrl] = useState(null);
   const [showMobileSummary, setShowMobileSummary] = useState(false);
+  const [resolvedPromoCode, setResolvedPromoCode] = useState('');
 
   const topRef = useRef(null);
 
@@ -49,6 +52,35 @@ const BookingPage = () => {
       window.scrollTo({ top: y, behavior: 'smooth' });
     }
   }, [isSuccess]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadPromoCode = async () => {
+      if (!bookPromoCode) {
+        setResolvedPromoCode('');
+        return;
+      }
+
+      try {
+        const promo = await fetchCouponCodeFromPromoSource(bookPromoCode);
+        if (isMounted) {
+          setResolvedPromoCode(promo);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setResolvedPromoCode('');
+        }
+        console.warn('[BookingPage] Promo lookup on load failed:', error);
+      }
+    };
+
+    loadPromoCode();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [bookPromoCode]);
 
   const updateFormData = (newData) => {
     setFormData(prev => ({ ...prev, ...newData }));
@@ -113,6 +145,8 @@ const BookingPage = () => {
           name: (formData.contact.fullName || '').trim(),
           phone: formatPhone(formData.contact.phone)
         },
+        ...(bookPromoCode ? { book: bookPromoCode } : {}),
+        ...(resolvedPromoCode ? { promoCode: resolvedPromoCode } : {}),
         confirmationNumber
       };
 
@@ -192,6 +226,7 @@ const BookingPage = () => {
 
   const handleReset = () => {
     setIsSuccess(false);
+    setResolvedPromoCode('');
     setFormData({ ...INITIAL_FORM_DATA, terms: false, smsConsent: false });
     setErrors({});
     setShowMobileSummary(false);
@@ -246,7 +281,7 @@ const BookingPage = () => {
                         </button>
                     </div>
                     <div className="flex-1 overflow-y-auto p-4 pb-32">
-                        <PriceBreakdown formData={formData} />
+                        <PriceBreakdown formData={formData} promoCode={resolvedPromoCode} book={bookPromoCode} />
                     </div>
                     <div className="p-4 border-t border-gray-200 bg-gray-50">
                       <button
@@ -336,7 +371,7 @@ const BookingPage = () => {
 
               {/* Desktop Sticky Summary */}
               <div className="hidden lg:block w-[400px] shrink-0 sticky top-28 self-start transition-all duration-300">
-                <PriceBreakdown formData={formData} />
+                <PriceBreakdown formData={formData} promoCode={resolvedPromoCode} book={bookPromoCode} />
               </div>
 
             </div>
