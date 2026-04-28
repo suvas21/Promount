@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ZoomIn } from 'lucide-react';
+import { X, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
 import CTAButton from '@/components/ui/CTAButton';
 
 const images = [
@@ -20,9 +20,16 @@ const images = [
 
 const Gallery = ({ onOpenBooking }) => {
   const [selectedImage, setSelectedImage] = useState(null);
+  const scrollRef = useRef(null);
+
+  const scroll = (dir) => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: dir * 320, behavior: 'smooth' });
+    }
+  };
 
   return (
-    <section id="gallery" className="py-16 bg-gradient-to-b from-navy-900 to-navy-800">
+    <section id="gallery" className="py-8 bg-gradient-to-b from-navy-900 to-navy-800">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -38,31 +45,51 @@ const Gallery = ({ onOpenBooking }) => {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {images.map((image, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.05 }}
-              whileHover={{ scale: 1.03 }}
-              className="relative aspect-square rounded-xl overflow-hidden shadow-xl group cursor-pointer bg-navy-800"
-              onClick={() => setSelectedImage(image)}
-            >
-              <img
-                src={image}
-                alt={`Installation ${index + 1}`}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                <div className="bg-white/20 backdrop-blur-sm p-3 rounded-full">
-                  <ZoomIn className="w-8 h-8 text-white" />
+        <div className="relative mb-12">
+          <button
+            onClick={() => scroll(-1)}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-orange-500 text-white p-2 rounded-full transition-all duration-200 -translate-x-3"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+
+          <div
+            ref={scrollRef}
+            className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-2"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {images.map((image, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.05 }}
+                whileHover={{ scale: 1.03 }}
+                className="relative flex-shrink-0 w-72 h-72 rounded-xl overflow-hidden shadow-xl group cursor-pointer bg-navy-800"
+                onClick={() => setSelectedImage(image)}
+              >
+                <img
+                  src={image}
+                  alt={`Installation ${index + 1}`}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                  <div className="bg-white/20 backdrop-blur-sm p-3 rounded-full">
+                    <ZoomIn className="w-8 h-8 text-white" />
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))}
+          </div>
+
+          <button
+            onClick={() => scroll(1)}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-orange-500 text-white p-2 rounded-full transition-all duration-200 translate-x-3"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
         </div>
 
         <motion.div
@@ -71,13 +98,10 @@ const Gallery = ({ onOpenBooking }) => {
           viewport={{ once: true }}
           className="text-center"
         >
-          <p className="text-2xl text-white font-semibold mb-6">
-            Like what you see?
-          </p>
-          <CTAButton size="lg" onClick={onOpenBooking}>Get Your Price in 30 Seconds</CTAButton>
+          <p className="text-2xl text-white font-semibold mb-6">Like what you see?</p>
+          <CTAButton size="lg" onClick={onOpenBooking}>Book Now</CTAButton>
         </motion.div>
 
-        {/* Lightbox Modal */}
         <AnimatePresence>
           {selectedImage && (
             <motion.div

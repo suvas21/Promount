@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
@@ -46,18 +45,11 @@ const HomePage = () => {
           <div id="home">
             <Hero />
           </div>
-          <div className="mt-16">
-            <SpecialOfferBanner onOpenBooking={() => navigate('/booking')} />
-          </div>
-          <div className="mt-16">
-            <PromoBanner />
-          </div>
-          <Services id="services" />
-          <div className="mt-16">
-            <WhyChooseUs />
-          </div>
-          <Reviews id="reviews" />
           <Gallery id="gallery" onOpenBooking={() => navigate('/booking')} />
+          <PromoBanner />
+          <WhyChooseUs />
+          <Reviews id="reviews" />
+          <Services id="services" />
           <AboutUs id="about" />
           <FAQ id="faq" />
           <Contact id="contact" />

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
@@ -10,14 +11,15 @@ import Step2 from '@/components/booking/Step2';
 import Step3 from '@/components/booking/Step3';
 import PriceBreakdown from '@/components/booking/PriceBreakdown';
 import SuccessState from '@/components/booking/SuccessState';
-import { cn } from '@/lib/utils';
 import { fetchCouponCodeFromPromoSource } from '@/lib/couponService';
+import { cn } from '@/lib/utils';
 
 const BookingModal = ({ isOpen, onClose }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const bookPromoCode = new URLSearchParams(window.location.search).get('book')?.trim() || '';
   const [currentStep, setCurrentStep] = useState(1);
+  const [selectedPath, setSelectedPath] = useState(null); // 'single' or 'multi'
   const [formData, setFormData] = useState({
     ...INITIAL_FORM_DATA,
     terms: false,
@@ -88,6 +90,23 @@ const BookingModal = ({ isOpen, onClose }) => {
     setErrors(newErrors);
   };
 
+  const handleSelectPath = (path) => {
+    setSelectedPath(path);
+    
+    if (path === 'single') {
+      // Automatically set tvCount to 1 for single TV selection
+      updateFormData({ tvCount: 1 });
+    }
+    // For 'multi' path, the Step1 component shows the phone call UI
+    // and doesn't allow progression to Step2
+  };
+
+  const handleResetPath = () => {
+    setSelectedPath(null);
+    // Reset tvCount when resetting path selection
+    updateFormData({ tvCount: '' });
+  };
+
   const isFormValid = Boolean(
     formData.date &&
     formData.timeSlot &&
@@ -100,6 +119,28 @@ const BookingModal = ({ isOpen, onClose }) => {
   const validateStep = (step) => {
     const newErrors = {};
     let isValid = true;
+
+    if (step === 1) {
+      // Step 1 validation: must select a path
+      if (!selectedPath) {
+        toast({
+          variant: "destructive",
+          title: "Selection Required",
+          description: "Please select how many TVs you want to mount."
+        });
+        return false;
+      }
+      
+      // If 'multi' path is selected, prevent progression
+      if (selectedPath === 'multi') {
+        toast({
+          variant: "default",
+          title: "Please Call Us",
+          description: "For 2+ TVs, please call our specialist at (972) 430-3694 for the best service and pricing."
+        });
+        return false;
+      }
+    }
 
     if (step === 3) {
       if (!validateRequired(formData.date)) newErrors.date = 'Date is required';
@@ -141,6 +182,7 @@ const BookingModal = ({ isOpen, onClose }) => {
         onClose();
         setTimeout(() => {
           setCurrentStep(1);
+          setSelectedPath(null);
           setFormData({ ...INITIAL_FORM_DATA, terms: false, smsConsent: false });
           setErrors({});
           setIsSuccess(false);
@@ -153,8 +195,9 @@ const BookingModal = ({ isOpen, onClose }) => {
     } else {
       onClose();
       if (isSuccess) {
-         setTimeout(() => {
+        setTimeout(() => {
           setCurrentStep(1);
+          setSelectedPath(null);
           setFormData({ ...INITIAL_FORM_DATA, terms: false, smsConsent: false });
           setErrors({});
           setIsSuccess(false);
@@ -186,7 +229,8 @@ const BookingModal = ({ isOpen, onClose }) => {
         },
         ...(bookPromoCode ? { book: bookPromoCode } : {}),
         ...(resolvedPromoCode ? { promoCode: resolvedPromoCode } : {}),
-        confirmationNumber
+        confirmationNumber,
+        stripeCheckoutUrl
       };
 
       const isSaturday =
@@ -210,35 +254,16 @@ const BookingModal = ({ isOpen, onClose }) => {
 
       const result = await response.json();
 
-      console.log("print resonse", result);
-if (!response.ok) {
-  throw new Error(result?.message || "Request failed");
-}
+      console.log("print response", result);
 
-if (result?.checkoutUrl) {
-  console.log(" Stripe Checkout URL received:", result.checkoutUrl);
-  setStripeCheckoutUrl(result.checkoutUrl);
-}
+      if (!response.ok) {
+        throw new Error(result?.message || "Request failed");
+      }
 
-      // const rawText = await response.json();
-      // let result = null;
-      // try {
-      //   result = JSON.parse(rawText);
-      // } catch (e) { }
-
-      // if (!response.ok) {
-      //   throw new Error(`HTTP ${response.status}: ${result?.message || result?.error || response.statusText || rawText}`);
-      // }
-
-      // if (result && !result.success) {
-      //   throw new Error(`Backend Error: ${result.message || 'Unknown error'}`);
-      // }
-      // console.log(" Backend Response:", result);
-
-      // if (result?.checkoutUrl) {
-      //     console.log(" Stripe URL received:", result.checkoutUrl);
-      //   setStripeCheckoutUrl(result.checkoutUrl);
-      // }
+      if (result?.checkoutUrl) {
+        console.log("✅ Stripe Checkout URL received:", result.checkoutUrl);
+        setStripeCheckoutUrl(result.checkoutUrl);
+      }
 
       setFormData({
         ...payload,
@@ -265,9 +290,10 @@ if (result?.checkoutUrl) {
   };
 
   const handleReset = () => {
-    console.log(" handleReset called");
+    console.log("✅ handleReset called");
     setIsSuccess(false);
     setCurrentStep(1);
+    setSelectedPath(null);
     setFormData({ ...INITIAL_FORM_DATA, terms: false, smsConsent: false });
     setErrors({});
     setShowMobileSummary(false);
@@ -281,7 +307,7 @@ if (result?.checkoutUrl) {
   };
 
   const isBookButtonDisabled = isSubmitting || !isFormValid;
-  console.log("isSuccess state:", isSuccess);
+  
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center sm:p-4">
       <motion.div
@@ -301,23 +327,23 @@ if (result?.checkoutUrl) {
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white z-10">
           <div>
-             <h2 className="text-xl font-bold text-gray-900">
-               {isSuccess ? 'Quote Generated' : 'Book Your Installation'}
-             </h2>
-             {!isSuccess && (
-               <div className="flex space-x-2 mt-2">
-                 {[1, 2, 3].map(step => (
-                   <div 
-                     key={step} 
-                     className={cn(
-                       "h-1.5 rounded-full transition-all duration-300",
-                       step <= currentStep ? "w-8 bg-orange-50" : "w-4 bg-gray-200",
-                       step <= currentStep && "bg-orange-500"
-                     )} 
-                   />
-                 ))}
-               </div>
-             )}
+            <h2 className="text-xl font-bold text-gray-900">
+              {isSuccess ? 'Quote Generated' : 'Book Your Installation'}
+            </h2>
+            {!isSuccess && (
+              <div className="flex space-x-2 mt-2">
+                {[1, 2, 3].map(step => (
+                  <div 
+                    key={step} 
+                    className={cn(
+                      "h-1.5 rounded-full transition-all duration-300",
+                      step <= currentStep ? "w-8 bg-orange-50" : "w-4 bg-gray-200",
+                      step <= currentStep && "bg-orange-500"
+                    )} 
+                  />
+                ))}
+              </div>
+            )}
           </div>
           <button 
             onClick={handleClose}
@@ -328,83 +354,86 @@ if (result?.checkoutUrl) {
         </div>
 
         <div className="flex-1 overflow-hidden flex flex-col md:flex-row relative">
-           
-           <AnimatePresence>
-             {showMobileSummary && (
-               <motion.div 
-                 initial={{ y: "100%" }}
-                 animate={{ y: 0 }}
-                 exit={{ y: "100%" }}
-                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                 className="absolute inset-0 z-20 bg-white md:hidden flex flex-col"
-               >
-                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white">
-                    <h3 className="text-lg font-bold text-gray-900">Order Summary</h3>
-                    <button 
-                      onClick={() => setShowMobileSummary(false)}
-                      className="p-2 hover:bg-gray-100 rounded-full text-gray-500"
-                    >
-                      <X className="w-6 h-6" />
-                    </button>
-                 </div>
-                 <div className="flex-1 overflow-y-auto p-4 pb-24">
-                    <PriceBreakdown formData={formData} promoCode={resolvedPromoCode} book={bookPromoCode} />
-                 </div>
-               </motion.div>
-             )}
-           </AnimatePresence>
+          
+          <AnimatePresence>
+            {showMobileSummary && (
+              <motion.div 
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="absolute inset-0 z-20 bg-white md:hidden flex flex-col"
+              >
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white">
+                  <h3 className="text-lg font-bold text-gray-900">Order Summary</h3>
+                  <button 
+                    onClick={() => setShowMobileSummary(false)}
+                    className="p-2 hover:bg-gray-100 rounded-full text-gray-500"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 pb-24">
+                  <PriceBreakdown formData={formData} promoCode={resolvedPromoCode} book={bookPromoCode}/>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-           {isSuccess ? (
+          {isSuccess ? (
             <div className="w-full h-full overflow-y-auto">
-             {console.log("Rendering SuccessState with Stripe URL:", stripeCheckoutUrl)}
+              {console.log("Rendering SuccessState with Stripe URL:", stripeCheckoutUrl)}
               <SuccessState 
-                
-                  formData={formData} 
-                  onClose={handleClose} 
-                  onReset={handleReset} 
-                  stripeCheckoutUrl={stripeCheckoutUrl}
-                  isSaturdayBooking={isSaturdayBooking}
-                />
-             </div>
-           ) : (
-             <>
-                <div 
-                  ref={scrollContainerRef}
-                  className="flex-1 overflow-y-auto p-6 md:p-8 scroll-smooth"
-                >
-                  <div className="max-w-xl mx-auto">
-                    {currentStep === 1 && (
-                      <Step1 formData={formData} updateFormData={updateFormData} errors={errors} />
-                    )}
-                    {currentStep === 2 && (
-                      <Step2 formData={formData} updateFormData={updateFormData} errors={errors} />
-                    )}
-                    {currentStep === 3 && (
-                      <Step3 formData={formData} updateFormData={updateFormData} errors={errors} setErrors={setErrors} />
-                    )}
-                  </div>
+                formData={formData} 
+                onClose={handleClose} 
+                onReset={handleReset} 
+                stripeCheckoutUrl={stripeCheckoutUrl}
+                isSaturdayBooking={isSaturdayBooking}
+              />
+            </div>
+          ) : (
+            <>
+              <div 
+                ref={scrollContainerRef}
+                className="flex-1 overflow-y-auto p-6 md:p-8 scroll-smooth"
+              >
+                <div className="max-w-xl mx-auto">
+                  {currentStep === 1 && (
+                    <Step1 
+                      onSelectPath={handleSelectPath}
+                      selectedPath={selectedPath}
+                      onReset={handleResetPath}
+                    />
+                  )}
+                  {currentStep === 2 && (
+                    <Step2 formData={formData} updateFormData={updateFormData} errors={errors} />
+                  )}
+                  {currentStep === 3 && (
+                    <Step3 formData={formData} updateFormData={updateFormData} errors={errors} setErrors={setErrors} />
+                  )}
                 </div>
+              </div>
 
-                <div className="hidden md:block w-[320px] bg-gray-50 border-l border-gray-200 overflow-y-auto">
-                  <div className="p-6 pb-32">
-                    <PriceBreakdown formData={formData} promoCode={resolvedPromoCode} book={bookPromoCode} />
-                  </div>
+              <div className="hidden md:block w-[320px] bg-gray-50 border-l border-gray-200 overflow-y-auto">
+                <div className="p-6 pb-32">
+                  <PriceBreakdown formData={formData} promoCode={resolvedPromoCode} book={bookPromoCode} />
                 </div>
-             </>
-           )}
+              </div>
+            </>
+          )}
         </div>
 
         {!isSuccess && (
           <div className="p-4 border-t border-gray-100 bg-white flex flex-col md:flex-row items-center justify-between gap-4 z-30 relative">
             <button 
-               onClick={toggleMobileSummary}
-               className="md:hidden w-full flex justify-between items-center bg-gray-50 p-3 rounded-lg mb-2 hover:bg-gray-100 transition-colors active:scale-[0.99]"
+              onClick={toggleMobileSummary}
+              className="md:hidden w-full flex justify-between items-center bg-gray-50 p-3 rounded-lg mb-2 hover:bg-gray-100 transition-colors active:scale-[0.99]"
             >
-               <span className="text-sm font-semibold text-gray-600">Estimated Total</span>
-               <span className="text-sm font-bold text-orange-600 flex items-center">
-                  Tap to view summary
-                  <ChevronUp className="w-4 h-4 ml-1.5" />
-               </span>
+              <span className="text-sm font-semibold text-gray-600">Estimated Total</span>
+              <span className="text-sm font-bold text-orange-600 flex items-center">
+                Tap to view summary
+                <ChevronUp className="w-4 h-4 ml-1.5" />
+              </span>
             </button>
 
             <button
@@ -421,7 +450,13 @@ if (result?.checkoutUrl) {
             {currentStep < 3 ? (
               <button
                 onClick={handleNext}
-                className="w-full md:w-auto px-8 py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-bold shadow-lg shadow-gray-900/20 transition-all flex items-center justify-center"
+                disabled={currentStep === 1 && !selectedPath}
+                className={cn(
+                  "w-full md:w-auto px-8 py-3 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center",
+                  currentStep === 1 && !selectedPath
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-gray-900 hover:bg-gray-800 text-white shadow-gray-900/20"
+                )}
               >
                 Next <ChevronRight className="w-5 h-5 ml-1" />
               </button>

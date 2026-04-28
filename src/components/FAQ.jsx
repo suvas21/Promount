@@ -8,7 +8,7 @@ const FAQ = () => {
   const faqs = [
     {
       question: 'How much does it cost?',
-      answer: 'Mounting starts as low as $29, with a $30 discount on orders over $200. Use the "Get Your Price in 30 Seconds" button on this page for an instant, custom quote.'
+      answer: 'Mounting starts as low as $29, with a $30 discount on orders over $200. Use the "Book Now" button on this page for an instant, custom quote.'
     },
     {
       question: 'How long does it take?',
@@ -44,7 +44,7 @@ const FAQ = () => {
     },
     {
       question: 'Do you offer same-day appointments?',
-      answer: 'Yes, when available. We also offer next-day, evening, and weekend slots to fit your schedule.'
+      answer: 'Yes, when available. We also have appointments available throughout the week, including weekends, to fit your schedule.'
     },
     {
       question: 'Is there a warranty?',
@@ -52,7 +52,7 @@ const FAQ = () => {
     },
     {
       question: 'What forms of payment do you accept?',
-      answer: 'We accept credit cards, debit cards, and tap-to-pay. We do not accept cash. Payment is due only after you are satisfied.'
+      answer: 'We\'re happy to accept credit and debit cards. We don\'t accept cash.'
     },
     {
       question: 'Do you install TVs for businesses?',
@@ -60,18 +60,18 @@ const FAQ = () => {
     },
     {
       question: 'How do I book?',
-      answer: 'It takes less than 30 seconds. Book online, call, or text us. You can even send a photo of your wall to get started.'
+      answer: <span>Use the <strong className="text-orange-500">Book Now</strong> button, give us a call, or send us a text — whichever works best for you.</span>
     }
   ];
 
   return (
-    <section id="faq" className="py-16 bg-navy-900">
+    <section id="faq" className="py-8 bg-navy-900">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-12"
+          className="text-center mb-8"
         >
           <div className="flex items-center justify-center mb-4">
             <HelpCircle className="w-10 h-10 text-orange-500 mr-3" />
@@ -84,7 +84,6 @@ const FAQ = () => {
           </p>
         </motion.div>
 
-        {/* Updated for responsive grid and centered items */}
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 justify-items-center">
           {faqs.map((faq, index) => (
             <motion.div
@@ -97,7 +96,7 @@ const FAQ = () => {
             >
               <button
                 onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-white/5 transition-all duration-300"
+                className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-white/5 transition-all duration-300"
               >
                 <span className="text-lg font-semibold text-white pr-8">{faq.question}</span>
                 <motion.div
@@ -117,7 +116,7 @@ const FAQ = () => {
                     transition={{ duration: 0.3 }}
                     className="overflow-hidden"
                   >
-                    <div className="px-6 pb-5 text-white/80 leading-relaxed">
+                    <div className="px-6 pb-4 text-white/80 leading-relaxed">
                       {faq.answer}
                     </div>
                   </motion.div>

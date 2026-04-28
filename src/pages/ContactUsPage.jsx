@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Phone, Clock, Send, Loader2, AlertCircle, MapPin, Mail } from 'lucide-react';
 import Header from '@/components/Header';
@@ -17,6 +18,7 @@ const customNavLinks = [
 
 const ContactUsPage = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -109,31 +111,21 @@ const ContactUsPage = () => {
         }
       );
 
-      const result = await response.json();
-
-      toast({
-        title: "Message Sent Successfully!",
-        description: "We've received your request and will contact you shortly.",
-        className: "bg-green-600 text-white border-none",
-      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result?.success === false) {
+        throw new Error(result?.message || "Lead creation failed");
+      }
 
       setFormData({ firstName: '', lastName: '', email: '', phone: '', message: '' });
+      navigate('/contact-submitted');
 
     } catch (error) {
       console.error('Submission error:', error);
 
       toast({
-        variant: "default",
-        title: "Submission Successful 🎉",
-        description: "Your lead has been created successfully."
-      });
-
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        message: ""
+        variant: "destructive",
+        title: "Submission Failed",
+        description: "We couldn't submit your message. Please try again."
       });
     } finally {
       setLoading(false);

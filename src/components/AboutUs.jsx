@@ -4,7 +4,7 @@ import { Heart, Users, Award, Target } from 'lucide-react';
 
 const AboutUs = () => {
   return (
-    <section id="about" className="py-16 bg-gradient-to-b from-navy-800 to-navy-900 relative overflow-hidden">
+    <section id="about" className="py-8 bg-gradient-to-b from-navy-800 to-navy-900 relative overflow-hidden">
       <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0" style={{
           backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
@@ -25,7 +25,7 @@ const AboutUs = () => {
             
             <div className="space-y-6 text-white/80 text-lg leading-relaxed">
               <p>
-                Let’s face it: you have better things to do with your weekend and free time than wrestling with drywall anchors and reading confusing instruction manuals.
+                Let's face it: you have better things to do with your weekend and free time than wrestling with drywall anchors and reading confusing instruction manuals.
               </p>
               
               <p>
@@ -33,7 +33,7 @@ const AboutUs = () => {
               </p>
               
               <p>
-                We are a local team of dedicated technicians serving the entire DFW Metroplex. Our technicians have mounted thousands of screens, encountered every type of wall — from metal studs in high-rise apartments to brick fireplaces in historic homes — and perfected the process. Our mission is simple: we arrive on time, we work efficiently, and we get it right the first time.  We guarantee it!
+                We are a local team of dedicated technicians serving the entire DFW Metroplex. We have encountered every type of wall — from metal studs in high-rise apartments to brick fireplaces in historic homes — and perfected the process. Our mission is simple: we arrive on time, we work efficiently, and we get it right the first time. We guarantee it!
               </p>
               
               <p>
@@ -49,31 +49,15 @@ const AboutUs = () => {
             className="space-y-6"
           >
             <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl">
-              <img src="https://horizons-cdn.hostinger.com/23419ec8-8982-4234-9a56-712b109f32dc/pexels-artbovich-6527053-SOJFK.jpg" alt="Professional TV Installation Team" className="w-full h-full object-cover" />
+              <img src="https://horizons-cdn.hostinger.com/b9ebcfa9-4abf-47ed-a852-96eed2403bfb/pexels-artbovich-6527053-SOJFK.jpg" alt="Professional TV Installation Team" className="w-full h-full object-cover" />
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                {
-                  icon: Heart,
-                  title: 'Customer First',
-                  text: 'Your satisfaction is our priority'
-                },
-                {
-                  icon: Users,
-                  title: '1,000\'s of Installs',
-                  text: 'Our technicians are trusted by thousands.'
-                },
-                {
-                  icon: Target,
-                  title: 'Precision Work',
-                  text: 'Perfect every time'
-                },
-                {
-                  icon: Award,
-                  title: 'Expert Team',
-                  text: 'Highly skilled pros'
-                }
+                { icon: Heart, title: 'Customer First', text: 'Your satisfaction is our priority' },
+                { icon: Users, title: 'Lots of Happy Customers', text: 'Trusted across the DFW Metroplex' },
+                { icon: Target, title: 'Precision Work', text: 'Perfect every time' },
+                { icon: Award, title: 'Expert Team', text: 'Highly skilled pros' }
               ].map((item, index) => (
                 <motion.div 
                   key={index} 

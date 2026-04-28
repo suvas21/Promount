@@ -1,140 +1,99 @@
-
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Star, Calendar, Award } from 'lucide-react';
+import { motion } from 'framer-motion';
 import CTAButton from '@/components/ui/CTAButton';
 import TrustBadge from '@/components/ui/TrustBadge';
+import { Shield, Award, DollarSign, Tag, Clock, Tv } from 'lucide-react';
 
 const Hero = () => {
   const navigate = useNavigate();
-  const [currentBenefit, setCurrentBenefit] = useState(0);
-  const benefits = ["Same-Day Service", "Fully Insured", "Expert Technicians", "Hidden Wires"];
-  const trustBadges = [{
-    icon: Award,
-    text: "One Year Warranty"
-  }, {
-    icon: Star,
-    text: "100's of 5 Star Reviews"
-  }, {
-    icon: Calendar,
-    text: "Seven Days Service"
-  }, {
-    icon: Shield,
-    text: "Insured Protection Guaranteed"
-  }];
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentBenefit(prev => (prev + 1) % benefits.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
+  const trustBadges = [
+    { icon: Tv, text: "Starts at Just $29 — No Hidden Fees" },
+    { icon: Tag, text: "$30 Discount on Orders Over $200" },
+    { icon: Award, text: "1-Year Labor Warranty — We Stand Behind Our Work" },
+    { icon: Shield, text: "$1M Insured — Your Home is Protected" },
+    { icon: Clock, text: "Same-Day Service Available" },
+    { icon: DollarSign, text: "Got 2+ TVs? Save Up to 20%" },
+  ];
 
-  return <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-      {/* Background Image with Gradient Overlay */}
+  const mobileBadges = [
+    { text: <>Starts at just <strong>$29</strong></> },
+    { text: <><strong>$30 off</strong> orders over $200</> },
+    { text: <><strong>1-year</strong> warranty</> },
+    { text: <><strong>$1M</strong> fully insured</> },
+    { text: <><strong>Same-day</strong> service available</> },
+    { text: <>Got 2+ TVs? Save up to <strong>20%</strong></> },
+  ];
+
+  return (
+    <section id="home" className="relative min-h-fit flex items-start justify-center overflow-hidden pt-20">
       <div className="absolute inset-0 z-0">
-        {/* Dark gradient overlay for improved text contrast */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black/60 z-10" />
-        <img src="https://horizons-cdn.hostinger.com/23419ec8-8982-4234-9a56-712b109f32dc/pexels-pu-ca-adryan-163345030-13051217-QCLEF.jpg" alt="Professional TV Installation" className="w-full h-full object-cover" />
+        <img
+          src="https://horizons-cdn.hostinger.com/23419ec8-8982-4234-9a56-712b109f32dc/pexels-pu-ca-adryan-163345030-13051217-QCLEF.jpg"
+          alt="Professional TV Installation"
+          className="w-full h-full object-cover"
+        />
       </div>
 
-      {/* Content */}
       <div className="container mx-auto px-4 z-20 relative">
         <div className="max-w-4xl mx-auto text-center">
-          <motion.div initial={{
-          opacity: 0,
-          y: 30
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          duration: 0.8
-        }}>
-            <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold text-white mb-6 leading-tight">
-              Same Day Professional TV Mounting.{' '}
+
+          {/* 1. Heading */}
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+            <h1 className="text-2xl md:text-4xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+              Professional TV Mounting.{' '}
+              <br />
               <span className="text-orange-500">On Any Wall</span> - Clean, Fast, and Hidden Wires.
+              <br />
+              <span className="text-orange-500">Call now</span><br />
+              <a href="tel:9724303694" className="hover:text-orange-400 transition-colors">(972) 430-3694</a>
             </h1>
           </motion.div>
 
-          <motion.p initial={{
-          opacity: 0,
-          y: 20
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          duration: 0.8,
-          delay: 0.3
-        }} className="text-xl md:text-2xl font-semibold bg-gradient-to-r from-orange-400 to-orange-600 text-transparent bg-clip-text mb-8">
-            Serving the Dallas-Fort Worth Metroplex
-          </motion.p>
-
-          <motion.div initial={{
-          opacity: 0,
-          y: 30
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          duration: 0.8,
-          delay: 0.2
-        }} className="mb-8">
-            <p className="text-xl md:text-2xl text-white/90 mb-4">
-              Trusted TV installers in your neighborhood — thousands of happy customers, not just opinions. Ask around, we’re the ones they recommend.
-            </p>
-            
-            {/* Rotating Benefits */}
-            <div className="h-12 flex items-center justify-center">
-              <AnimatePresence mode="wait">
-                <motion.div key={currentBenefit} initial={{
-                opacity: 0,
-                y: 20
-              }} animate={{
-                opacity: 1,
-                y: 0
-              }} exit={{
-                opacity: 0,
-                y: -20
-              }} transition={{
-                duration: 0.5
-              }} className="text-2xl md:text-3xl font-bold text-orange-500">
-                  ✓ {benefits[currentBenefit]}
-                </motion.div>
-              </AnimatePresence>
-            </div>
+          {/* 2. Trust Badges — Card grid on desktop */}
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2 }}
+            className="hidden md:grid grid-cols-3 gap-2 max-w-3xl mx-auto mb-8">
+            {trustBadges.map((badge, index) => (
+              <TrustBadge key={index} icon={badge.icon} text={badge.text} />
+            ))}
           </motion.div>
 
-          <motion.div initial={{
-          opacity: 0,
-          y: 30
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          duration: 0.8,
-          delay: 0.4
-        }} className="mb-12">
+          {/* 2. Trust Badges — 2-column list on mobile */}
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2 }}
+            className="md:hidden grid grid-cols-2 gap-x-4 gap-y-2 max-w-sm mx-auto mb-8">
+            {mobileBadges.map((badge, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0">
+                  <circle cx="8" cy="8" r="8" fill="#ff6b35"/>
+                  <path d="M4.5 8l2.5 2.5 4.5-5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span className="text-white text-xs text-left">{badge.text}</span>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* 3. CTA Button */}
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.4 }}
+            className="mb-8">
             <CTAButton onClick={() => navigate('/booking')} size="lg" className="text-xl px-12 py-6">
-              Get Your Price in 30 Seconds
+              Book Now
             </CTAButton>
           </motion.div>
 
-          {/* Trust Badges */}
-          <motion.div initial={{
-          opacity: 0,
-          y: 30
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          duration: 0.8,
-          delay: 0.6
-        }} className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
-            {trustBadges.map((badge, index) => <TrustBadge key={index} icon={badge.icon} text={badge.text} />)}
+          {/* 4. Tagline */}
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.6 }}
+            className="mb-12">
+            <p className="text-xl md:text-2xl text-white/90">
+              Trusted by Your Neighbors. Loved by Your Living Room.
+            </p>
           </motion.div>
+
         </div>
       </div>
-    </section>;
+    </section>
+  );
 };
+
 export default Hero;

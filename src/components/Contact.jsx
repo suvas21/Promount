@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Phone, Clock, Send, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Phone, Clock, Send, Loader2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { sendContactEmail } from '@/lib/emailService';
-// import { sendContactToZohoCRM } from '@/lib/zohoCRMService';
 
 const Contact = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -72,15 +72,8 @@ const Contact = () => {
     setLoading(true);
 
     try {
-      // 1. Send to Zoho CRM
-      console.log('Initiating Zoho CRM Lead Creation...');
-      // await sendContactToZohoCRM(formData);
-
-      // sid implement
       const response = await fetch(
-        //"https://promount-10118673626.catalystappsail.com/create_lead",
-         "https://promountbackend-914264443.development.catalystserverless.com/server/pro_mount_backend_function/create_lead",
-        //  "https://promountbackend-914264443.development.catalystserverless.com/server/create_lead/",
+        "https://promountbackend-914264443.development.catalystserverless.com/server/pro_mount_backend_function/create_lead",
         {
           method: "POST",
           headers: {
@@ -96,67 +89,23 @@ const Contact = () => {
         }
       );
 
-      const result = await response.json();
-       toast({
-        variant: "destructive",
-        title: "Submission Failed",
-        // description: errorMessage
-      });
-
-      // if (!response.ok || !result.success) {
-      //   throw new Error("Lead creation failed");
-      // }
-      console.log(result);
-
-      // 2. Send Notification Email (Best effort, don't block success if this fails but CRM worked)
-      // try {
-      //   await sendContactEmail(formData);
-      // } catch (emailError) {
-      //   console.warn('Email notification failed, but CRM lead was created.', emailError);
-      // }
-
-      // 3. Success Feedback
-      toast({
-        title: "Message Sent Successfully!",
-        description: "We've received your request and will contact you shortly.",
-        className: "bg-green-600 text-white border-none",
-        action: <CheckCircle2 className="w-5 h-5 text-white" />
-      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result?.success === false) {
+        throw new Error(result?.message || "Lead creation failed");
+      }
 
       // Clear form
       setFormData({ firstName: '', lastName: '', email: '', phone: '', message: '' });
+      navigate('/contact-submitted');
 
     } catch (error) {
       console.error('Submission error:', error);
 
-    toast({
-      variant: "default", // or remove variant if default is success
-      title: "Submission Successful 🎉",
-      description: "Your lead has been created successfully."
-    });
-
-    setFormData({
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      message: ""
-    });
-      
-      // Detailed error message handling
-      // let errorMessage = "Something went wrong. Please try calling us directly.";
-      // if (error.message && (error.message.includes('No authentication') || error.message.includes('No refresh token'))) {
-      //   errorMessage = "System Configuration Error: CRM connection not initialized.";
-      // } else if (error.message) {
-      //    // Use the error message but keep it user friendly if it's too technical
-      //    errorMessage = "We couldn't submit your form automatically. Please call us.";
-      // }
-
-      // toast({
-      //   variant: "destructive",
-      //   title: "Submission Failed",
-      //   description: errorMessage
-      // });
+      toast({
+        variant: "destructive",
+        title: "Submission Failed",
+        description: "We couldn't submit your message. Please try again."
+      });
     } finally {
       setLoading(false);
     }

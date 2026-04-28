@@ -5,7 +5,7 @@ import { Info, Clock, Award, CheckCircle2, ShieldCheck, ListChecks } from 'lucid
 import { cn } from '@/lib/utils';
 
 const PriceBreakdown = ({ formData, promoCode = '', book = '' }) => {
-  const pricing = calculatePrice({ ...formData, promoCode, book });
+const pricing = calculatePrice({ ...formData, promoCode, book });
 const isSaturday = formData.date
   ? new Date(formData.date).getDay() === 6
   : false;
@@ -160,7 +160,6 @@ const isSaturday = formData.date
               Coupon applied: {pricing.promoCode}
             </div>
           )}
-
           {/* Subtotal after discounts */}
           <div className="space-y-2 sm:space-y-3 pb-3 sm:pb-4 border-b border-gray-200">
             <div className="flex justify-between items-center text-gray-900 font-bold text-xs sm:text-sm">

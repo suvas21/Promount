@@ -7,7 +7,9 @@ import ServicesPage from '@/pages/ServicesPage';
 import GalleryPage from '@/pages/GalleryPage';
 import AboutUsPage from '@/pages/AboutUsPage';
 import ContactUsPage from '@/pages/ContactUsPage';
+import ContactSubmittedPage from '@/pages/ContactSubmittedPage';
 import BookingPage from '@/pages/BookingPage';
+import BookingConfirmationPage from '@/pages/BookingConfirmationPage';
 import PrivacyPage from '@/pages/PrivacyPage';
 import TermsPage from '@/pages/TermsPage';
 
@@ -20,7 +22,9 @@ function App() {
         <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/about" element={<AboutUsPage />} />
         <Route path="/contact" element={<ContactUsPage />} />
+        <Route path="/contact-submitted" element={<ContactSubmittedPage />} />
         <Route path="/booking" element={<BookingPage />} />
+        <Route path="/booking-confirmation" element={<BookingConfirmationPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />
         {/* Catch all redirect to home */}

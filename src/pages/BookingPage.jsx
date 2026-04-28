@@ -237,6 +237,15 @@ const BookingPage = () => {
     setShowMobileSummary(prev => !prev);
   };
 
+  const goToBookingConfirmation = () => {
+    navigate(`/booking-confirmation${location.search || ''}`, {
+      state: {
+        formData,
+        step: 3
+      }
+    });
+  };
+
   return (
     <div className="min-h-screen bg-navy-950 flex flex-col">
       <Helmet>
@@ -287,7 +296,7 @@ const BookingPage = () => {
                       <button
                         onClick={() => {
                           setShowMobileSummary(false);
-                          handleSubmit();
+                          goToBookingConfirmation();
                         }}
                         disabled={isSubmitting || !isFormValid}
                         className="w-full py-4 bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-bold shadow-lg shadow-orange-500/30 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed group"
@@ -351,7 +360,7 @@ const BookingPage = () => {
                 {/* Desktop Submit Button */}
                 <div className="hidden lg:flex justify-end mt-4">
                   <button
-                    onClick={handleSubmit}
+                    onClick={goToBookingConfirmation}
                     disabled={isSubmitting || !isFormValid}
                     className="px-12 py-4 bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-bold text-lg shadow-lg shadow-orange-500/30 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed group"
                   >
@@ -394,7 +403,7 @@ const BookingPage = () => {
           </button>
 
           <button
-            onClick={handleSubmit}
+            onClick={goToBookingConfirmation}
             disabled={isSubmitting || !isFormValid}
             className="w-full py-3.5 bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-bold shadow-lg shadow-orange-500/30 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
           >

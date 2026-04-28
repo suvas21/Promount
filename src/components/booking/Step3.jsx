@@ -1,124 +1,148 @@
 import React, { useEffect } from 'react';
-import { Calendar, Clock, MapPin, User, FileText, AlertCircle } from 'lucide-react';
+import { MapPin, User, FileText, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatPhone } from '@/lib/bookingUtils';
+import { formatPhone, WEEKDAY_DISCOUNT_RATE } from '@/lib/bookingUtils';
+
+// Generate 7 days forward from today
+const getNext30Days = () => {
+  const days = [];
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    days.push({
+      iso,
+      dayName: dayNames[d.getDay()],
+      dayNum: d.getDate(),
+      month: monthNames[d.getMonth()],
+      dayOfWeek: d.getDay(), // 0=Sun,1=Mon,2=Tue,...,6=Sat
+      isToday: i === 0,
+    });
+  }
+  return days;
+};
+
+const TIME_SLOTS = [
+  { value: 'morning',   label: 'Morning',   sub: '8 AM – 12 PM' },
+  { value: 'afternoon', label: 'Afternoon', sub: '12 PM – 5 PM' },
+  { value: 'evening',   label: 'Evening',   sub: '5 PM – 8 PM' },
+  { value: 'flexible',  label: 'Flexible',  sub: 'Any time works' },
+];
 
 const Step3 = ({ formData, updateFormData, errors, setErrors }) => {
-  
+  const days = getNext30Days();
 
-  const today = new Date().toISOString().split('T')[0];
-
-  // Set Terms and SMS consent to unchecked by default if they haven't been set yet
   useEffect(() => {
-    if (formData.terms === undefined || formData.smsConsent === undefined) {
-      updateFormData({ 
-        terms: formData.terms || false, 
-        smsConsent: formData.smsConsent || false 
-      });
-    }
+    const updates = {};
+    if (!formData.terms) updates.terms = true;
+    if (formData.smsConsent === undefined) updates.smsConsent = false;
+    if (Object.keys(updates).length > 0) updateFormData(updates);
   }, []);
 
   const handleContactChange = (field, value) => {
     const formattedValue = field === 'phone' ? formatPhone(value) : value;
-    updateFormData({
-      contact: { ...formData.contact, [field]: formattedValue }
-    });
+    updateFormData({ contact: { ...formData.contact, [field]: formattedValue } });
   };
 
   const handleAddressChange = (field, value) => {
-    updateFormData({
-      address: { ...formData.address, [field]: value }
-    });
+    updateFormData({ address: { ...formData.address, [field]: value } });
   };
 
- const handleDateChange = (e) => {
-  const selectedDate = e.target.value;
+  const handleDateSelect = (iso) => {
+    updateFormData({ date: iso });
+  };
 
-  if (!selectedDate) return;
-
-  const day = new Date(selectedDate).getDay();
-
-  // if (day === 6) {
-  //   const confirmSurcharge = window.confirm(
-  //     "Saturday bookings include a surcharge. Do you want to continue?"
-  //   );
-
-  //   if (!confirmSurcharge) {
-  //     updateFormData({ date: "" });
-  //     return;
-  //   }
-  // }
-
-  updateFormData({ date: selectedDate });
-};
+  // Determine discount info for selected date
+  const selectedDay = days.find(d => d.iso === formData.date);
+  const isDiscountDay = selectedDay && (selectedDay.dayOfWeek === 1 || selectedDay.dayOfWeek === 2);
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-      
+
       {/* Mandatory Fields Note */}
-      <div className="bg-orange-50 border border-orange-100 rounded-lg p-3 flex items-start space-x-3 mb-2">
+      <div className="bg-orange-50 border border-orange-100 rounded-lg p-3 flex items-start space-x-3">
         <AlertCircle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
         <p className="text-sm text-orange-800 leading-tight">
-          Fields marked with an <span className="font-bold text-red-600">"*"</span> are mandatory before you can book.
+          Fields marked with <span className="font-bold text-red-600">"*"</span> are required before booking.
         </p>
       </div>
 
-      {/* Date & Time */}
+      {/* Date — 7-day pill grid */}
       <section>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2 flex items-center">
-              <Calendar className="w-4 h-4 mr-2 text-orange-500" />
-              Preferred Date <span className="text-red-500 ml-1">*</span>
-            </label>
-            <input
-              type="date"
-              min={today}
-              value={formData.date}
-              // onChange={(e) => updateFormData({ date: e.target.value })}
-              onChange={handleDateChange}
-              className={cn(
-                "w-full px-4 py-3 rounded-lg border bg-white focus:outline-none focus:border-orange-500 transition-colors text-gray-900",
-                errors.date ? "border-red-500" : "border-gray-300"
-              )}
-            />
-            {errors.date && <p className="text-red-500 text-xs mt-1">{errors.date}</p>}
-            
-            {/* Mobile-only explanation text */}
-            <p className="md:hidden text-xs text-gray-500 mt-2 leading-relaxed">
-              If you book on a Monday or Tuesday, we will give you an additional 10% discount. 
-              Booking on a Saturday, our busiest day, will require a $29 non-refundable deposit in case of cancellations.
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2 flex items-center">
-              <Clock className="w-4 h-4 mr-2 text-orange-500" />
-              Time Slot <span className="text-red-500 ml-1">*</span>
-            </label>
-            <select
-              value={formData.timeSlot}
-              onChange={(e) => updateFormData({ timeSlot: e.target.value })}
-              className={cn(
-                "w-full px-4 py-3 rounded-lg border bg-white focus:outline-none focus:border-orange-500 transition-colors text-gray-900",
-                errors.timeSlot ? "border-red-500" : "border-gray-300"
-              )}
-            >
-              <option value="">Select a time...</option>
-              <option value="morning">Morning (8 AM - 12 PM)</option>
-              <option value="afternoon">Afternoon (12 PM - 5 PM)</option>
-              <option value="evening">Evening (5 PM - 8 PM)</option>
-              <option value="flexible">Flexible</option>
-            </select>
-            {errors.timeSlot && <p className="text-red-500 text-xs mt-1">{errors.timeSlot}</p>}
-          </div>
+        <label className="block text-sm font-semibold text-gray-900 mb-3">
+          Preferred Date <span className="text-red-500">*</span>
+        </label>
+        <div className="flex gap-2 overflow-x-auto pt-4 pb-2 snap-x snap-mandatory scrollbar-none -mx-1 px-1">
+          {days.map((day) => {
+            const isDiscount = day.dayOfWeek === 1 || day.dayOfWeek === 2;
+            const isSelected = formData.date === day.iso;
+            return (
+              <button
+                key={day.iso}
+                onClick={() => handleDateSelect(day.iso)}
+                className={cn(
+                  "flex-shrink-0 snap-start flex flex-col items-center justify-center w-16 py-3 rounded-xl border-2 transition-all duration-200 relative",
+                  isSelected
+                    ? "border-orange-500 bg-orange-50 shadow-sm"
+                    : "border-gray-200 bg-white hover:border-orange-300"
+                )}
+              >
+                {isDiscount && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                    -10%
+                  </span>
+                )}
+                <span className={cn("text-xs font-semibold", isSelected ? "text-orange-600" : "text-gray-500")}>
+                  {day.dayName}
+                </span>
+                <span className={cn("text-lg font-black leading-tight", isSelected ? "text-orange-600" : "text-gray-900")}>
+                  {day.dayNum}
+                </span>
+                <span className={cn("text-[10px]", isSelected ? "text-orange-500" : "text-gray-400")}>
+                  {day.month}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Desktop-only explanation text */}
-        <p className="hidden md:block text-xs text-gray-500 mt-2 leading-relaxed">
-            If you book on a Monday or Tuesday, we will give you an additional 10% discount. 
-            Booking on a Saturday, our busiest day, will require a $29 non-refundable deposit in case of cancellations.
-        </p>
+        {/* Savings banner */}
+        {isDiscountDay && (
+          <div className="mt-3 bg-green-50 border border-green-200 rounded-lg px-4 py-2.5 flex items-center gap-2">
+            <span className="text-green-600 font-bold text-sm">🎉 10% off applied!</span>
+            <span className="text-green-700 text-xs">You're saving by booking on {selectedDay.dayName}.</span>
+          </div>
+        )}
+        {errors.date && <p className="text-red-500 text-xs mt-1">{errors.date}</p>}
+      </section>
+
+      {/* Time Slot — 2-column visual grid */}
+      <section>
+        <label className="block text-sm font-semibold text-gray-900 mb-3">
+          Time Slot <span className="text-red-500">*</span>
+        </label>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {TIME_SLOTS.map((slot) => (
+            <button
+              key={slot.value}
+              onClick={() => updateFormData({ timeSlot: slot.value })}
+              className={cn(
+                "p-4 rounded-xl border-2 transition-all duration-200 text-left",
+                formData.timeSlot === slot.value
+                  ? "border-orange-500 bg-orange-50 shadow-sm"
+                  : "border-gray-200 bg-white hover:border-orange-300"
+              )}
+            >
+              <div className="font-semibold text-sm text-gray-900">{slot.label}</div>
+              <div className="text-xs text-gray-500 mt-0.5">{slot.sub}</div>
+            </button>
+          ))}
+        </div>
+        {errors.timeSlot && <p className="text-red-500 text-xs mt-1">{errors.timeSlot}</p>}
       </section>
 
       {/* Address */}
@@ -127,7 +151,7 @@ const Step3 = ({ formData, updateFormData, errors, setErrors }) => {
           <MapPin className="w-4 h-4 mr-2 text-orange-500" />
           Service Address
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
             <input
               type="text"
@@ -162,19 +186,13 @@ const Step3 = ({ formData, updateFormData, errors, setErrors }) => {
             {errors['address.city'] && <p className="text-red-500 text-xs mt-1">{errors['address.city']}</p>}
           </div>
           <div className="grid grid-cols-2 gap-4 md:col-span-2">
-            <div>
-              <input
-                type="text"
-                placeholder="State"
-                value={formData.address.state}
-                readOnly
-                className={cn(
-                  "w-full px-4 py-3 rounded-lg border bg-gray-50 text-gray-500 cursor-not-allowed",
-                  errors['address.state'] ? "border-red-500" : "border-gray-200"
-                )}
-              />
-              {errors['address.state'] && <p className="text-red-500 text-xs mt-1">{errors['address.state']}</p>}
-            </div>
+            <input
+              type="text"
+              placeholder="State"
+              value={formData.address.state}
+              readOnly
+              className="w-full px-4 py-3 rounded-lg border bg-gray-50 text-gray-500 cursor-not-allowed border-gray-200"
+            />
             <div>
               <input
                 type="text"
@@ -200,21 +218,16 @@ const Step3 = ({ formData, updateFormData, errors, setErrors }) => {
           Contact Information
         </h3>
         <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <input
-                type="text"
-                placeholder="Full Name"
-                value={formData.contact.fullName || ''}
-                onChange={(e) => handleContactChange('fullName', e.target.value)}
-                className={cn(
-                  "w-full px-4 py-3 rounded-lg border bg-white focus:outline-none focus:border-orange-500 transition-colors text-gray-900",
-                  errors['contact.fullName'] ? "border-red-500" : "border-gray-300"
-                )}
-              />
-              {errors['contact.fullName'] && <p className="text-red-500 text-xs mt-1">{errors['contact.fullName']}</p>}
-            </div>
-          </div>
+          <input
+            type="text"
+            placeholder="Full Name"
+            value={formData.contact.fullName || ''}
+            onChange={(e) => handleContactChange('fullName', e.target.value)}
+            className={cn(
+              "w-full px-4 py-3 rounded-lg border bg-white focus:outline-none focus:border-orange-500 transition-colors text-gray-900",
+              errors['contact.fullName'] ? "border-red-500" : "border-gray-300"
+            )}
+          />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -233,9 +246,7 @@ const Step3 = ({ formData, updateFormData, errors, setErrors }) => {
               {errors['contact.phone'] && <p className="text-red-500 text-xs mt-1">{errors['contact.phone']}</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Email Address
-              </label>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Email Address <span className="text-red-500">*</span></label>
               <input
                 type="email"
                 placeholder="Email Address"
@@ -267,36 +278,37 @@ const Step3 = ({ formData, updateFormData, errors, setErrors }) => {
           className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:border-orange-500 resize-none text-gray-900"
         />
       </section>
-      
-      {/* Terms */}
+
+      {/* Terms — pre-checked */}
       <div className="flex items-start space-x-3 pt-2">
-         <input
-            type="checkbox"
-            id="terms"
-            checked={formData.terms || false}
-            onChange={(e) => updateFormData({ terms: e.target.checked })}
-            className="mt-1 w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-         />
-         <label htmlFor="terms" className="text-sm text-gray-600">
-           By checking, I agree to the <a href="#" className="text-orange-600 hover:underline">Terms of Service</a> and <a href="#" className="text-orange-600 hover:underline">Privacy Policy</a>. <span className="text-red-500">*</span>
-         </label>
+        <input
+          type="checkbox"
+          id="terms"
+          checked={formData.terms || false}
+          onChange={(e) => updateFormData({ terms: e.target.checked })}
+          className="mt-1 w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+        />
+        <label htmlFor="terms" className="text-sm text-gray-600">
+          By checking, I agree to the <a href="/terms" className="text-orange-600 hover:underline">Terms of Service</a> and <a href="/privacy" className="text-orange-600 hover:underline">Privacy Policy</a>. <span className="text-red-500">*</span>
+        </label>
       </div>
       {errors.terms && <p className="text-red-500 text-xs ml-7">{errors.terms}</p>}
 
-      {/* SMS Consent */}
+      {/* SMS Consent — unchecked by default */}
       <div className="flex items-start space-x-3 pt-2">
-         <input
-            type="checkbox"
-            id="smsConsent"
-            checked={formData.smsConsent || false}
-            onChange={(e) => updateFormData({ smsConsent: e.target.checked })}
-            className="mt-1 w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500 flex-shrink-0"
-         />
-         <label htmlFor="smsConsent" className="text-sm text-gray-600 leading-relaxed">
-           By checking and by opting into SMS from a web form or other medium, you are agreeing to receive SMS messages from Pro Mount USA LLC. This includes SMS messages for account notifications, customer care, etc. SMS message frequency varies. Message and data rates may apply. For assistance, text HELP or visit our website at https://promountusa.com/.  Visit https://promountusa.com/privacy for privacy policy and https://promountusa.com/terms for Terms of Service. Reply STOP to any message to opt out. <span className="text-red-500"></span>
-         </label>
+        <input
+          type="checkbox"
+          id="smsConsent"
+          checked={formData.smsConsent || false}
+          onChange={(e) => updateFormData({ smsConsent: e.target.checked })}
+          className="mt-1 w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500 flex-shrink-0"
+        />
+        <label htmlFor="smsConsent" className="text-sm text-gray-600 leading-relaxed">
+          By checking and by opting into SMS from a web form or other medium, you are agreeing to receive SMS messages from Pro Mount USA LLC. This includes SMS messages for account notifications, customer care, etc. SMS message frequency varies. Message and data rates may apply. For assistance, text HELP or visit our website at https://promountusa.com/. Visit https://promountusa.com/privacy for privacy policy and https://promountusa.com/terms for Terms of Service. Reply STOP to any message to opt out.
+        </label>
       </div>
       {errors.smsConsent && <p className="text-red-500 text-xs ml-7">{errors.smsConsent}</p>}
+
     </div>
   );
 };

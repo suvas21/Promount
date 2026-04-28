@@ -6,9 +6,9 @@ import { scrollToSection } from '@/lib/scrollToSection';
 
 const defaultNavLinks = [
   { name: 'Home', href: '/#home' },
-  { name: 'Services', href: '/#services' },
-  { name: 'Reviews', href: '/#reviews' },
   { name: 'Gallery', href: '/#gallery' },
+  { name: 'Reviews', href: '/#reviews' },
+  { name: 'Services', href: '/#services' },
   { name: 'About Us', href: '/#about' },
   { name: 'FAQ', href: '/#faq' },
   { name: 'Contact Us', href: '/#contact' }
@@ -48,14 +48,14 @@ const Header = ({ navLinks = defaultNavLinks }) => {
       animate={{ y: 0 }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         isBookingPage 
-          ? 'bg-navy-950 shadow-xl py-1'          // reduced from py-3
+          ? 'bg-navy-950 shadow-xl py-1'
           : isScrolled 
-            ? 'bg-navy-950/95 backdrop-blur-md shadow-xl py-1'   // reduced from py-3
-            : 'bg-navy-900/80 backdrop-blur-sm py-2'             // reduced from py-5
+            ? 'bg-navy-950/95 backdrop-blur-md shadow-xl py-1'
+            : 'bg-navy-900/80 backdrop-blur-sm py-2'
       } border-b border-white/5`}
     >
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-10 md:h-12"> {/* reduced from h-14 md:h-16 */}
+        <div className="flex items-center justify-between h-10 md:h-12">
           {/* Logo */}
           <motion.div
             whileHover={{ scale: 1.02 }}
@@ -74,7 +74,7 @@ const Header = ({ navLinks = defaultNavLinks }) => {
                 key={link.name}
                 href={link.href}
                 onClick={(e) => handleNavClick(e, link.href)}
-                className="text-gray-100 hover:text-white hover:bg-white/10 px-3 py-1.5 rounded-lg transition-all duration-200 font-medium cursor-pointer text-sm xl:text-base relative group" // reduced py-2 to py-1.5
+                className="text-gray-100 hover:text-white hover:bg-white/10 px-3 py-1.5 rounded-lg transition-all duration-200 font-medium cursor-pointer text-sm xl:text-base relative group"
               >
                 {link.name}
                 <span className="absolute bottom-1 left-3 right-3 h-0.5 bg-orange-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
@@ -92,22 +92,27 @@ const Header = ({ navLinks = defaultNavLinks }) => {
               </a>
             </div>
             <a 
-              href="/#contact" 
-              onClick={(e) => handleNavClick(e, '/#contact')}
-              className="bg-orange-600 hover:bg-orange-500 text-white px-5 py-2 rounded-full transition-all text-sm font-black uppercase tracking-wide shadow-lg shadow-orange-600/30 hover:shadow-orange-600/50 active:scale-95" // reduced px-6 py-3 to px-5 py-2
+              href="/booking"
+              onClick={(e) => { e.preventDefault(); navigate('/booking'); }}
+              className="bg-orange-600 hover:bg-orange-500 text-white px-5 py-2 rounded-full transition-all text-sm font-black uppercase tracking-wide shadow-lg shadow-orange-600/30 hover:shadow-orange-600/50 active:scale-95"
             >
-              Get a Quote
+              Book Now
             </a>
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
-            aria-label="Toggle Menu"
-          >
-            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          {/* Mobile Right Side — Phone Icon + Menu Button */}
+          <div className="lg:hidden flex items-center gap-2">
+            <a href="tel:9724303694" className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors" aria-label="Call Us">
+              <Phone className="w-6 h-6 text-orange-500" />
+            </a>
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
+              aria-label="Toggle Menu"
+            >
+              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -141,11 +146,11 @@ const Header = ({ navLinks = defaultNavLinks }) => {
                   </a>
                 </div>
                 <a 
-                  href="/#contact"
-                  onClick={(e) => handleNavClick(e, '/#contact')}
+                  href="/booking"
+                  onClick={(e) => { e.preventDefault(); navigate('/booking'); }}
                   className="flex w-full items-center justify-center gap-2 bg-orange-600 hover:bg-orange-500 text-white px-6 py-5 rounded-2xl transition-all font-black uppercase tracking-widest shadow-xl shadow-orange-600/30"
                 >
-                  Request Instant Quote
+                  Book Now
                 </a>
               </div>
             </nav>

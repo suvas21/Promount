@@ -17,7 +17,7 @@ const PinnedBookingButton = () => {
       <div className="bg-white/20 p-2 rounded-full">
         <CalendarClock className="w-6 h-6" />
       </div>
-      <span className="font-bold text-lg hidden sm:inline">Get Your Price in 30 seconds</span>
+      <span className="font-bold text-lg hidden sm:inline">Book Now</span>
     </motion.button>
   );
 };
