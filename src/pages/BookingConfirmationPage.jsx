@@ -4,6 +4,7 @@ import BookingModal from '@/components/BookingModal';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SuccessState from '@/components/booking/SuccessState';
+import { withBookParam } from '@/lib/bookCode';
 
 const BookingConfirmationPage = () => {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ const BookingConfirmationPage = () => {
                 formData={successData.formData}
                 stripeCheckoutUrl={successData.stripeCheckoutUrl}
                 onClose={() => navigate('/')}
-                onReset={() => navigate(`/booking${location.search || ''}`)}
+                onReset={() => navigate(withBookParam('/booking', location.search))}
               />
             </div>
           </div>

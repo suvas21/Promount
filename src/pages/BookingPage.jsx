@@ -20,12 +20,13 @@ import SuccessState from '@/components/booking/SuccessState';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { fetchCouponCodeFromPromoSource } from '@/lib/couponService';
+import { getBookCodeFromSearch, getEffectiveBookCode, getStoredBookCode, withBookParam } from '@/lib/bookCode';
 
 const BookingPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const bookPromoCode = new URLSearchParams(location.search).get('book')?.trim() || '';
+  const bookPromoCode = getEffectiveBookCode(location.search);
   
   const [formData, setFormData] = useState({
     ...INITIAL_FORM_DATA,
@@ -44,6 +45,19 @@ const BookingPage = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  // If user navigates to /booking without ?book=..., keep the promo alive by
+  // restoring it into the URL from localStorage (shareable and consistent).
+  useEffect(() => {
+    const hasBookInUrl = Boolean(getBookCodeFromSearch(location.search));
+    const stored = getStoredBookCode();
+    if (!hasBookInUrl && stored) {
+      const nextUrl = withBookParam(location.pathname, location.search);
+      if (`${location.pathname}${location.search || ''}` !== nextUrl) {
+        navigate(nextUrl, { replace: true });
+      }
+    }
+  }, [location.pathname, location.search, navigate]);
 
   useEffect(() => {
     if (topRef.current && isSuccess) {
@@ -238,7 +252,7 @@ const BookingPage = () => {
   };
 
   const goToBookingConfirmation = () => {
-    navigate(`/booking-confirmation${location.search || ''}`, {
+    navigate(withBookParam('/booking-confirmation', location.search), {
       state: {
         formData,
         step: 3

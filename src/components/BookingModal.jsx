@@ -12,12 +12,13 @@ import Step3 from '@/components/booking/Step3';
 import PriceBreakdown from '@/components/booking/PriceBreakdown';
 import SuccessState from '@/components/booking/SuccessState';
 import { fetchCouponCodeFromPromoSource } from '@/lib/couponService';
+import { getEffectiveBookCode } from '@/lib/bookCode';
 import { cn } from '@/lib/utils';
 
 const BookingModal = ({ isOpen, onClose }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const bookPromoCode = new URLSearchParams(window.location.search).get('book')?.trim() || '';
+  const bookPromoCode = getEffectiveBookCode(window.location.search);
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedPath, setSelectedPath] = useState(null); // 'single' or 'multi'
   const [formData, setFormData] = useState({

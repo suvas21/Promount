@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Phone } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { scrollToSection } from '@/lib/scrollToSection';
+import { getBookCodeFromSearch, setStoredBookCode } from '@/lib/bookCode';
 
 const defaultNavLinks = [
   { name: 'Home', href: '/#home' },
@@ -20,7 +21,7 @@ const Header = ({ navLinks = defaultNavLinks }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isBookingPage = location.pathname === '/booking';
+  const isBookingPage = location.pathname === '/booking' || location.pathname === '/booking-confirmation';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -29,6 +30,13 @@ const Header = ({ navLinks = defaultNavLinks }) => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    const book = getBookCodeFromSearch(location.search);
+    if (book) {
+      setStoredBookCode(book);
+    }
+  }, [location.search]);
 
   const handleNavClick = (e, href) => {
     scrollToSection(e, href, location, navigate, isMobileMenuOpen, setIsMobileMenuOpen);
